@@ -167,3 +167,5 @@ tr.hl td{background:var(--surface-1)}
 .ln{min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ln.op{white-space:normal;overflow:visible}
 .cl{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
+.mdel{display:inline-flex;vertical-align:middle;margin-left:6px;padding:2px;border-radius:6px;cursor:pointer;color:var(--text-muted);opacity:.6}
+.mdel:hover{opacity:1;color:var(--text-danger);background:var(--surface-1)}

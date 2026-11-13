@@ -116,8 +116,8 @@ const PAL=['#EF9F27','#7F77DD','#D85A30','#378ADD','#BA7517','#1D9E75','#D4537E'
 const ccol=c=>c.c||CCOL[c.id]||'#888780';
 const cardOf=c=>c.card?D.cards.find(x=>x.id===c.card&&!x.x):null;
 const rowCol=c=>c.c||(cardOf(c)?ccol(cardOf(c)):null);
-function rangeM(){const ks=new Set(Object.keys(D.meses));live(D.contas).forEach(c=>{for(const k in c.v)ks.add(k)});
-  const y=new Date().getFullYear();ks.add(y+'-01');ks.add(y+'-12');const a=[...ks].sort();const r=[];let k=a[0];while(k<=a[a.length-1]){r.push(k);k=addM(k,1)}return r}
+function ensureM(k){let m=D.meses[k];if(!m||m.x){m=D.meses[k]={e:0,a:null,u:nowT()}}return m}
+function rangeM(){const ks=new Set(Object.keys(D.meses).filter(k=>!D.meses[k].x));live(D.contas).forEach(c=>{for(const k in c.v)ks.add(k)});if(!ks.size)ks.add(mk(today()));const a=[...ks].sort();const r=[];let k=a[0];while(k<=a[a.length-1]){r.push(k);k=addM(k,1)}return r}
 function calc(){const R={};let prev=0;for(const k of rangeM()){const m=D.meses[k]||{};const e=m.e||0;const ov=m.a!=null;const so=ov?m.a:prev;
   let d=0,pg=0;for(const c of live(D.contas)){const v=c.v[k]||0;d+=v;if(c.p[k])pg+=v}const sd=r2(so+e-d);R[k]={e,so,ov,d:r2(d),pg:r2(pg),sd};prev=sd}return R}
 function dueDay(c){const cd=cardOf(c);if(cd)return cd.due;const m=/dia\s*(\d{1,2})/i.exec(c.d||'')||/^\s*(\d{1,2})\s*$/.exec(c.d||'');return m?+m[1]:null}
@@ -153,7 +153,7 @@ const TG={'Trabalho':['var(--bg-accent)','var(--text-accent)'],'Casa':['var(--bg
 const TL=['Geral','Casa','Finanças','Compras','Trabalho'];
 const RED='var(--text-danger)',BLU='var(--text-accent)',AMB='var(--text-warning)',GRN='var(--text-success)';
 UI.tone=UI.tone??6;UI.w=UI.w||{};
-const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',nh:'',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:''};
+const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',nh:'',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:'',md:null};
 let LAN=[];
 const isPh=()=>matchMedia('(max-width:760px)').matches;
 const ic=(n,s=16,c)=>`<svg class="ic" width="${s}" height="${s}" style="${c?'color:'+c:''}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
@@ -180,6 +180,9 @@ function modalRD(){
   let h=`<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir compromisso recorrente</p><p class="sm" style="margin:0 0 10px">${esc(e.t)}, ${(REC[e.r]||'').toLowerCase()}. Você abriu o dia ${dbr(date).slice(0,5)}.</p>`;
   O.forEach(o=>{h+=`<div class="op" data-a="rdsel" data-i="${o[0]}">${ic(S.rch===o[0]?'circle-dot':'circle',20,S.rch===o[0]?BLU:'var(--text-muted)')}<span>${o[1]}</span></div>`});
   return h+`<div class="sg" style="justify-content:flex-end;margin-top:12px">${bt('rdno',null,'Cancelar')}${bt('rdok',null,'Excluir','dg')}</div></div></div>`}
+function modalMD(){
+  if(!S.md)return '';const k=S.md;
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes</p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
@@ -316,7 +319,7 @@ function vPlan(){
   const R=calc(),M=rangeM(),cur=mk(today()),cs=live(D.contas).sort((a,b)=>(a.i||0)-(b.i||0));
   let h=`<div class="tc"><span>Tom de cinza das linhas de conta</span><input type="range" min="0" max="24" step="1" value="${UI.tone}" data-t="1" aria-label="Tom de cinza das linhas"><span id="tv" style="min-width:30px">${UI.tone}%</span>${bt('trst',null,'Padrão','sm3')}</div>`;
   h+='<div class="mx" id="mx"><table id="tbl"><colgroup>'+colKeys().map(()=>'<col>').join('')+'</colgroup><thead><tr><th class="stk c0"></th><th class="l stk c1">Conta'+rsz('c')+'</th><th class="l stk c2">Venc.'+rsz('v')+'</th>';
-  M.forEach(k=>{h+=`<th class="mo${k===cur?' cur':''}">${mlab(k)}${k===cur?' · atual':''}${rsz(k)}</th>`});
+  M.forEach(k=>{h+=`<th class="mo${k===cur?' cur':''}">${mlab(k)}${k===cur?' · atual':''}<span class="mdel" data-a="mdel" data-i="${k}" role="button" aria-label="Excluir mês" title="Excluir este mês">${ic('trash',13)}</span>${rsz(k)}</th>`});
   h+='</tr></thead><tbody><tr class="hl"><td colspan="3" class="l lab stk cs" style="font-size:12px;background:var(--surface-1)">Sobrou do mês passado</td>';
   M.forEach(k=>{h+=`<td><div class="cl2"><input class="in r${R[k].ov?' ed':''}" style="font-size:12px!important" data-so="${k}" value="${nf(R[k].so)}" inputmode="decimal" aria-label="Sobrou do mês passado" title="${R[k].ov?'Valor ajustado por você. Apague para voltar ao cálculo automático.':'Calculado. Digite para ajustar.'}"><span class="ck gh">${ic('circle',18)}</span></div></td>`});
   h+='</tr><tr class="hl"><td colspan="3" class="l lab stk cs" style="font-weight:500;font-size:14px;background:var(--surface-1)">+ Entrada do mês</td>';
@@ -345,7 +348,7 @@ function vPhone(){
   let h=`<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px">${ibt('fm',-1,'chevron-left','Mês anterior')}<span style="flex:1;text-align:center;font-size:15px;font-weight:500">${MESL[+k.slice(5)-1]} ${k.slice(0,4)}</span>${ibt('fm',1,'chevron-right','Próximo mês')}${ibt('fcol',null,S.fc?'chevron-down':'chevron-up',S.fc?'Mostrar resumo':'Recolher resumo')}</div>`;
   if(!S.fc){const p=r.pg,dm=r.d||1;
     h+=`<div class="cd2" style="padding:8px 12px"><div class="cl"><span>Sobrou do mês passado</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-so="${k}" value="${nf(r.so)}"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>+ Entrada do mês</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-e="${k}" value="${r.e?nf(r.e):''}" placeholder="0,00"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>− Despesas do mês</span><span style="color:var(--text-danger)">${rs(r.d)}</span></div><div class="cl" style="border-top:.5px solid var(--border-strong);font-weight:500"><span>= Saldo total</span><span style="color:${r.sd<0?'var(--text-danger)':GRN};font-size:16px">${rs(r.sd)}</span></div></div><p class="sm" style="font-size:11px;margin:0 0 8px">O saldo total deste mês passa para o mês seguinte.</p><div style="height:6px;background:var(--surface-1);border-radius:3px;margin-bottom:4px"><div style="height:6px;width:${Math.max(0,Math.min(100,Math.round(p/dm*100)))}%;background:var(--text-secondary);border-radius:3px"></div></div><p class="sm" style="font-size:11px;margin:0 0 6px">Pago ${rs(p)} · A pagar ${rs(r.d-p)}</p>`}
-  h+=`<div class="sg" style="margin-bottom:6px">${bt('conta-new',null,'Conta','sm3','plus')}<span style="flex:1"></span>${bt('fedit',null,S.fe?'Pronto':'Editar','sm3'+(S.fe?' sa':''),'pencil')}</div><div>`;
+  h+=`<div class="sg" style="margin-bottom:6px">${bt('conta-new',null,'Conta','sm3','plus')}${bt('addm',null,'Novo mês','sm3','calendar-plus')}${bt('mdel',k,'Excluir mês','sm3 dg','trash')}<span style="flex:1"></span>${bt('fedit',null,S.fe?'Pronto':'Editar','sm3'+(S.fe?' sa':''),'pencil')}</div><div>`;
   cs.forEach(c=>{const v=c.v[k]||0,pg=!!c.p[k],dd=dueDay(c),col=rowCol(c);
     h+=`<div class="rw2" style="gap:8px;padding:8px 0;cursor:default"><span data-a="pd" data-i="${c.id}|${k}" style="display:flex">${ic(pg?'circle-check':'circle',22,pg?'var(--text-muted)':'var(--text-danger)')}</span><div style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${pg?'color:var(--text-secondary)':''}"><span class="dt" style="${col?'background:'+col:'border:1px dashed var(--text-muted)'};margin-right:6px"></span>${esc(c.n)}</div><span style="flex:0 0 auto;font-size:10px;white-space:nowrap;color:${dd?'var(--text-secondary)':'var(--text-warning)'}">${dd?'dia '+dd:'sem data'}</span>`;
     if(S.fe)h+=ibt('conta-edit',c.id,'pencil','Editar conta','sm2');
@@ -375,13 +378,13 @@ function draw(){
   const nt=$('#nt'),ntv=nt?nt.value:'';
   $('#tabs').innerHTML=tabsHtml();$('#bnav').innerHTML=tabsHtml();
   $('#main').innerHTML=VIEWS[S.t]();applyTone();
-  $('#ov').innerHTML=modalRD()||modalSet();
+  $('#ov').innerHTML=modalRD()||modalMD()||modalSet();
   if(S.t==='fin'&&S.fsub==='plan'&&!isPh()){upd();if(!FIT){FIT=true;fitAll();const th=document.querySelector('th.cur'),m2=$('#mx');if(th&&m2&&!SX)SX=Math.max(0,th.offsetLeft-(W.t+W.c+W.v)-20)}else applyW();const m2=$('#mx');if(m2)m2.scrollLeft=SX}
   else if(S.t==='fin')upd();
   if(nt&&$('#nt'))$('#nt').value=ntv;
   setSt()}
 function softRender(){const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$('#main').contains(a)){return}if(S.set||S.rd)return;draw()}
-function go(t){dropEmpty();S.t=t;ls('as_tab',t);S.no=null;S.nd=0;S.te=null;S.ok='';S.gm=0;resetForm();S.rd='';S.dd=null;S.set=0;if(t==='hoje')S.hd=0;if(t==='comp')S.fm='e';if(t==='fin')FIT=false;SX=0;draw();scrollTo(0,0)}
+function go(t){dropEmpty();S.t=t;ls('as_tab',t);S.no=null;S.nd=0;S.te=null;S.ok='';S.gm=0;resetForm();S.rd='';S.dd=null;S.set=0;S.md=null;if(t==='hoje')S.hd=0;if(t==='comp')S.fm='e';if(t==='fin')FIT=false;SX=0;draw();scrollTo(0,0)}
 function resetForm(){S.ne=0;S.nerr='';S.nh='';S.nn='';S.nr='none';S.nu=''}
 function dropEmpty(){if(!S.no)return;const n=D.notas.find(x=>x.id===S.no);if(n&&!n.t&&!n.c){if(n.u){n.x=1;touch(n)}else D.notas.splice(D.notas.indexOf(n),1)}}
 function addTask(){const el=$('#nt'),v=el?el.value.trim():'';if(!v){S.err='Digite o nome da tarefa';return}S.err='';const t={id:uid(),n:v,l:S.tl==='Todas'?'Geral':S.tl,d:0,s:0};D.tarefas.push(t);touch(t)}
@@ -457,8 +460,10 @@ const A={
   'conta-new':()=>{mConta(null);return 1},
   'conta-edit':(el,v)=>{mConta(v);return 1},
   'conta-del':(el,v)=>{const c=find(D.contas,v);c.x=1;touch(c);S.fe=0;$('#ov').innerHTML='';FIT=false},
+  mdel:(el,v)=>{S.md=S.md===v?null:v},mdno:()=>{S.md=null},
+  mdok:(el,v)=>{const k=v;D.meses[k]={x:1,u:nowT()};live(D.contas).forEach(c=>{if(k in c.v||k in c.o||k in c.p){delete c.v[k];delete c.o[k];delete c.p[k];touch(c)}});S.md=null;if(S.fm2===k){const M=rangeM();S.fm2=M.includes(mk(today()))?mk(today()):M[M.length-1]}dirty();FIT=false},
   addm:()=>{const M=rangeM(),last=M[M.length-1],nk=addM(last,1);ensureM(nk).u=nowT();D.meses[nk].e=(D.meses[last]||{}).e||0;
-    live(D.contas).forEach(c=>{if(c.v[last]){c.v[nk]=c.v[last];c.o[nk]=c.v[last];touch(c)}});dirty();FIT=false},
+    live(D.contas).forEach(c=>{if(c.v[last]){c.v[nk]=c.v[last];c.o[nk]=c.v[last];touch(c)}});S.fm2=nk;dirty();FIT=false},
   del:(el,v)=>{S.dd=v},delno:()=>{S.dd=null},
   delok:(el,v)=>{const c=find(D.contas,v);c.x=1;touch(c);S.dd=null;FIT=false},
   pk:(el,v)=>{S.pk=S.pk===v?null:v},
