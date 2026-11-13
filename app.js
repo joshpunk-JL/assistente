@@ -185,7 +185,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 3</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 4</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}</div>
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -301,11 +301,11 @@ function fitW(k){
   let wi=0;cs.forEach(c=>{wi=Math.max(wi,mw(nf(c.v[k]||0),13,500))});const r=R[k]||{e:0,so:0,d:0,sd:0};
   wi=Math.max(wi,mw(nf(r.e),14),mw(nf(r.so),12),mw(nf(r.d),13));
   const n1=wi+2*cw+12+8+24+4,n2=mw(nf(r.sd),16,500)+cw+34+8,n3=Math.max(mw('Pago '+nf(r.pg),12),mw('A pagar '+nf(r.d-r.pg),12))+20;
-  return Math.max(112,Math.ceil(Math.max(n1,n2,n3)))}
+  return Math.max(124,Math.ceil(Math.max(n1,n2,n3)))}
 function fitAll(){colKeys().forEach(k=>{W[k]=UI.w[k]||fitW(k)});applyW()}
 function growW(k){if(UI.w[k])return;const w=fitW(k);if(w>(W[k]||0)){W[k]=w;applyW()}}
 const colKeys=()=>['t','c','v',...rangeM()];
-function applyW(){const cols=document.querySelectorAll('#tbl col'),ks=colKeys();let t=0;ks.forEach((k,i)=>{const w=W[k]||112;if(cols[i])cols[i].style.width=w+'px';t+=w});
+function applyW(){const cols=document.querySelectorAll('#tbl col'),ks=colKeys();let t=0;ks.forEach((k,i)=>{const w=W[k]||124;if(cols[i])cols[i].style.width=w+'px';t+=w});
   const tb=$('#tbl');if(!tb)return;tb.style.width=t+'px';tb.style.setProperty('--l1',(W.t||34)+'px');tb.style.setProperty('--l2',((W.t||34)+(W.c||200))+'px')}
 const rsz=k=>`<div class="rs" data-k="${k}" title="Arraste para ajustar. Clique duas vezes para ajustar ao conteúdo."></div>`;
 const dueTxt=c=>{const cd=cardOf(c);return cd?'dia '+cd.due:(c.d||'')};
@@ -540,7 +540,7 @@ document.addEventListener('keydown',e=>{
   if(e.target.dataset&&(e.target.dataset.c||e.target.dataset.e||e.target.dataset.so)&&e.key==='Enter')e.target.blur()});
 document.addEventListener('mousedown',e=>{
   const el=e.target;if(!el.classList||!el.classList.contains('rs'))return;
-  e.preventDefault();const k=el.dataset.k,x0=e.clientX,w0=W[k]||112;
+  e.preventDefault();const k=el.dataset.k,x0=e.clientX,w0=W[k]||124;
   const mv=ev=>{W[k]=Math.max(50,w0+ev.clientX-x0);applyW()};
   const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);UI.w[k]=W[k];ls('as_ui',UI)};
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)});
