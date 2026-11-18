@@ -119,7 +119,7 @@ const rowCol=c=>c.c||(cardOf(c)?ccol(cardOf(c)):null);
 function ensureM(k){let m=D.meses[k];if(!m||m.x){m=D.meses[k]={e:0,a:null,u:nowT()}}return m}
 function rangeM(){const ks=new Set(Object.keys(D.meses).filter(k=>!D.meses[k].x));live(D.contas).forEach(c=>{for(const k in c.v)ks.add(k)});if(!ks.size)ks.add(mk(today()));const a=[...ks].sort();const r=[];let k=a[0];while(k<=a[a.length-1]){r.push(k);k=addM(k,1)}return r}
 function calc(){const R={};let prev=0;for(const k of rangeM()){const m=D.meses[k]||{};const e=m.e||0;const ov=m.a!=null;const so=ov?m.a:prev;
-  let d=0,pg=0;for(const c of live(D.contas)){const v=c.v[k]||0;d+=v;if(c.p[k])pg+=v}const sd=r2(so+e-d);R[k]={e,so,ov,d:r2(d),pg:r2(pg),sd};prev=sd}return R}
+  let d=0,pg=0,pf=0;for(const c of live(D.contas)){const v=c.v[k]||0;if(c.p[k]===2){pf+=v;continue}d+=v;if(c.p[k])pg+=v}const sd=r2(so+e-d);R[k]={e,so,ov,d:r2(d),pg:r2(pg),pf:r2(pf),sd};prev=sd}return R}
 function dueDay(c){const cd=cardOf(c);if(cd)return cd.due;const m=/dia\s*(\d{1,2})/i.exec(c.d||'')||/^\s*(\d{1,2})\s*$/.exec(c.d||'');return m?+m[1]:null}
 function occurs(ev,d){
   if(ev.x||d<ev.s)return false;if(ev.e&&d>ev.e)return false;if((ev.ex||[]).includes(d))return false;
@@ -185,7 +185,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 6</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 7</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -309,11 +309,13 @@ function applyW(){const cols=document.querySelectorAll('#tbl col'),ks=colKeys();
   const tb=$('#tbl');if(!tb)return;tb.style.width=t+'px';tb.style.setProperty('--l1',(W.t||34)+'px');tb.style.setProperty('--l2',((W.t||34)+(W.c||200))+'px')}
 const rsz=k=>`<div class="rs" data-k="${k}" title="Arraste para ajustar. Clique duas vezes para ajustar ao conteúdo."></div>`;
 const dueTxt=c=>{const cd=cardOf(c);return cd?'dia '+cd.due:(c.d||'')};
+const pk=(c,k)=>c.p[k]===2?BLU:c.p[k]?GRN:RED;
+const cyc=(c,k)=>{const p=c.p[k];if(!p)c.p[k]=1;else if(p===1)c.p[k]=2;else delete c.p[k]};
 function upd(){const R=calc();
   for(const k of rangeM()){const r=R[k];let e=document.getElementById('an'+k);if(e)e.textContent=nf(r.so);
     e=document.getElementById('ds'+k);if(e)e.textContent=nf(r.d);
     e=document.getElementById('sd'+k);if(e){e.textContent=nf(r.sd);e.style.color=r.sd<0?'var(--text-danger)':'var(--text-success)'}
-    e=document.getElementById('pg'+k);if(e)e.innerHTML='Pago '+nf(r.pg)+'<br>A pagar '+nf(r.d-r.pg)}
+    e=document.getElementById('pg'+k);if(e)e.innerHTML='Pago '+nf(r.pg)+'<br>A pagar '+nf(r.d-r.pg)+(r.pf?'<br><span style="color:var(--text-accent)">Por fora '+nf(r.pf)+'</span>':'')}
   const m=$('#phs');if(m){const r=R[mk(today())];if(r)m.textContent=rs(r.sd)}}
 function vPlan(){
   const R=calc(),M=rangeM(),cur=mk(today()),cs=live(D.contas).sort((a,b)=>(a.i||0)-(b.i||0));
@@ -332,7 +334,7 @@ function vPlan(){
       if(S.pk===c.id)h+='<div class="pop">'+PAL.map(p=>`<span class="sw" data-a="setc" data-i="${c.id}" data-c="${p}" style="background:${p}" role="button"></span>`).join('')+`<span class="sw" data-a="setc" data-i="${c.id}" data-c="" role="button" aria-label="Sem cor">${ic('x',12)}</span></div>`;
       h+='</div></td>'}
     h+=`<td class="l stk c2"><input class="in ds" data-d="${c.id}" value="${esc(dueTxt(c))}" placeholder="sem data" ${cd?'readonly title="Vencimento do cartão: ajuste na aba Cartões"':''} aria-label="Vencimento"></td>`;
-    M.forEach(k=>{const v=c.v[k]||0,pg=!!c.p[k];h+=`<td><div class="cl2"><input class="in r ${pg?'pg':'up'}${isEd(c,k)?' ed':''}" data-c="${c.id}|${k}" value="${v?nf(v):''}" placeholder="0,00" inputmode="decimal" aria-label="Valor"><span class="ck${v>0?'':' gh'}" data-a="pd" data-i="${c.id}|${k}" role="button" aria-label="Marcar como pago">${ic(pg?'circle-check':'circle',18,pg?'var(--text-muted)':'var(--text-danger)')}</span></div></td>`});
+    M.forEach(k=>{const v=c.v[k]||0,pg=!!c.p[k];h+=`<td><div class="cl2"><input class="in r ${pg?'pg':'up'}${isEd(c,k)?' ed':''}" data-c="${c.id}|${k}" value="${v?nf(v):''}" placeholder="0,00" inputmode="decimal" aria-label="Valor"><span class="ck${v>0?'':' gh'}" data-a="pd" data-i="${c.id}|${k}" role="button" aria-label="Alternar: a pagar, pago desta conta, pago de outra conta" title="Clique: a pagar → pago desta conta (verde) → pago de outra conta (azul, não desconta)">${ic(pg?'circle-check':'circle',18,pk(c,k))}</span></div></td>`});
     h+='</tr>'});
   h+='</tbody><tfoot class="ft"><tr><td colspan="3" class="l lab stk cs" style="background:var(--surface-1)">− Despesas do mês</td>';
   M.forEach(k=>{h+=`<td class="num" id="ds${k}" style="color:var(--text-danger)"></td>`});
@@ -341,16 +343,16 @@ function vPlan(){
   h+='</tr><tr><td colspan="3" class="l lab sm stk cs" style="background:var(--surface-1)">Pago e a pagar</td>';
   M.forEach(k=>{h+=`<td class="pgl" id="pg${k}"></td>`});
   h+=`</tr></tfoot></table></div><div class="ab2" data-a="cadd" role="button">${ic('plus',14)} Nova conta</div><div class="ab2" data-a="addm" role="button">${ic('calendar-plus',14)} Novo mês</div>`;
-  h+='<div class="lg"><span><b style="font-weight:500;color:var(--text-primary)">Branco brilhante</b> = a pagar</span><span><b style="font-weight:400;color:var(--text-muted)">Cinza escuro</b> = pago</span><span><span class="sq"></span> valor alterado por você</span><span>Arraste a borda do cabeçalho para mudar a largura. Dois cliques na borda ajustam ao conteúdo.</span></div>';
+  h+='<div class="lg"><span><b style="font-weight:500;color:var(--text-primary)">Branco brilhante</b> = a pagar</span><span><b style="font-weight:400;color:var(--text-muted)">Cinza</b> = pago: <b style="font-weight:400;color:var(--text-success)">check verde</b> sai desta conta, <b style="font-weight:400;color:var(--text-accent)">check azul</b> foi pago de outra conta e não desconta do saldo</span><span><span class="sq"></span> valor alterado por você</span><span>Arraste a borda do cabeçalho para mudar a largura. Dois cliques na borda ajustam ao conteúdo.</span></div>';
   return h}
 function vPhone(){
   const R=calc(),M=rangeM(),k=S.fm2,r=R[k]||{e:0,so:0,d:0,sd:0,pg:0},cs=live(D.contas).sort((a,b)=>(a.i||0)-(b.i||0)),first=k<=M[0],last=k>=M[M.length-1];
   let h=`<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px">${ibt('fm',-1,'chevron-left','Mês anterior')}<span style="flex:1;text-align:center;font-size:15px;font-weight:500">${MESL[+k.slice(5)-1]} ${k.slice(0,4)}</span>${ibt('fm',1,'chevron-right','Próximo mês')}${ibt('fcol',null,S.fc?'chevron-down':'chevron-up',S.fc?'Mostrar resumo':'Recolher resumo')}</div>`;
   if(!S.fc){const p=r.pg,dm=r.d||1;
-    h+=`<div class="cd2" style="padding:8px 12px"><div class="cl"><span>Saldo remanescente${r.ov?' <small style="color:var(--text-warning)">(ajustado)</small>':''}</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-so="${k}" value="${nf(r.so)}"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>+ Entrada do mês</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-e="${k}" value="${r.e?nf(r.e):''}" placeholder="0,00"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>− Despesas do mês</span><span style="color:var(--text-danger)">${rs(r.d)}</span></div><div class="cl" style="border-top:.5px solid var(--border-strong);font-weight:500"><span>= Saldo total</span><span style="color:${r.sd<0?'var(--text-danger)':GRN};font-size:16px">${rs(r.sd)}</span></div></div><p class="sm" style="font-size:11px;margin:0 0 8px">O saldo total deste mês passa para o mês seguinte.</p><div style="height:6px;background:var(--surface-1);border-radius:3px;margin-bottom:4px"><div style="height:6px;width:${Math.max(0,Math.min(100,Math.round(p/dm*100)))}%;background:var(--text-secondary);border-radius:3px"></div></div><p class="sm" style="font-size:11px;margin:0 0 6px">Pago ${rs(p)} · A pagar ${rs(r.d-p)}</p>`}
+    h+=`<div class="cd2" style="padding:8px 12px"><div class="cl"><span>Saldo remanescente${r.ov?' <small style="color:var(--text-warning)">(ajustado)</small>':''}</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-so="${k}" value="${nf(r.so)}"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>+ Entrada do mês</span><input class="in r" style="width:110px" type="text" inputmode="decimal" data-e="${k}" value="${r.e?nf(r.e):''}" placeholder="0,00"></div><div class="cl" style="border-top:.5px solid var(--border)"><span>− Despesas do mês</span><span style="color:var(--text-danger)">${rs(r.d)}</span></div><div class="cl" style="border-top:.5px solid var(--border-strong);font-weight:500"><span>= Saldo total</span><span style="color:${r.sd<0?'var(--text-danger)':GRN};font-size:16px">${rs(r.sd)}</span></div></div><p class="sm" style="font-size:11px;margin:0 0 8px">O saldo total deste mês passa para o mês seguinte.</p><div style="height:6px;background:var(--surface-1);border-radius:3px;margin-bottom:4px"><div style="height:6px;width:${Math.max(0,Math.min(100,Math.round(p/dm*100)))}%;background:var(--text-secondary);border-radius:3px"></div></div><p class="sm" style="font-size:11px;margin:0 0 6px">Pago ${rs(p)} · A pagar ${rs(r.d-p)}${r.pf?` · <span style="color:var(--text-accent)">Por fora ${rs(r.pf)}</span>`:''}</p>`}
   h+=`<div class="sg" style="margin-bottom:6px">${bt('conta-new',null,'Conta','sm3','plus')}${bt('addm',null,'Novo mês','sm3','calendar-plus')}${bt('mdel',k,'Excluir mês','sm3 dg','trash')}<span style="flex:1"></span>${bt('fedit',null,S.fe?'Pronto':'Editar','sm3'+(S.fe?' sa':''),'pencil')}</div><div>`;
   cs.forEach(c=>{const v=c.v[k]||0,pg=!!c.p[k],dd=dueDay(c),col=rowCol(c);
-    h+=`<div class="rw2" style="gap:8px;padding:8px 0;cursor:default"><span data-a="pd" data-i="${c.id}|${k}" style="display:flex">${ic(pg?'circle-check':'circle',22,pg?'var(--text-muted)':'var(--text-danger)')}</span><div style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${pg?'color:var(--text-secondary)':''}"><span class="dt" style="${col?'background:'+col:'border:1px dashed var(--text-muted)'};margin-right:6px"></span>${esc(c.n)}</div><span style="flex:0 0 auto;font-size:10px;white-space:nowrap;color:${dd?'var(--text-secondary)':'var(--text-warning)'}">${dd?'dia '+dd:'sem data'}</span>`;
+    h+=`<div class="rw2" style="gap:8px;padding:8px 0;cursor:default"><span data-a="pd" data-i="${c.id}|${k}" style="display:flex">${ic(pg?'circle-check':'circle',22,pk(c,k))}</span><div style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${pg?'color:var(--text-secondary)':''}"><span class="dt" style="${col?'background:'+col:'border:1px dashed var(--text-muted)'};margin-right:6px"></span>${esc(c.n)}</div><span style="flex:0 0 auto;font-size:10px;white-space:nowrap;color:${dd?'var(--text-secondary)':'var(--text-warning)'}">${dd?'dia '+dd:'sem data'}</span>`;
     if(S.fe)h+=ibt('conta-edit',c.id,'pencil','Editar conta','sm2');
     else h+=`<input class="in r ${v>0?(pg?'pg':'up'):''}${isEd(c,k)?' ed':''}" style="width:84px" data-c="${c.id}|${k}" value="${v?nf(v):''}" placeholder="0,00" inputmode="decimal">`;
     h+='</div>'});
@@ -459,7 +461,7 @@ const A={
   trst:()=>{UI.tone=6;ls('as_ui',UI)},
   fm:(el,v)=>{S.fm2=addM(S.fm2,+v)},
   fedit:()=>{S.fe=S.fe?0:1},
-  pd:(el,v)=>{const[id,k]=v.split('|'),c=find(D.contas,id);if(c.p[k])delete c.p[k];else c.p[k]=1;touch(c)},
+  pd:(el,v)=>{const[id,k]=v.split('|'),c=find(D.contas,id);cyc(c,k);touch(c)},
   cadd:()=>{const c={id:uid(),n:'Nova conta',d:'',c:null,card:'',v:{},o:{},p:{},i:Math.max(-1,...D.contas.map(x=>x.i||0))+1};D.contas.push(c);touch(c);FIT=false},
   'conta-new':()=>{mConta(null);return 1},
   'conta-edit':(el,v)=>{mConta(v);return 1},
