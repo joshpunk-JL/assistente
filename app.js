@@ -185,8 +185,8 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 4</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
-  <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}</div>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 5</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
 function gpHtml(){
@@ -370,7 +370,11 @@ const VIEWS={hoje:vHoje,comp:vComp,agenda:vAgenda,tar:vTar,notas:vNotas,fin:vFin
 function mConta(id){const c=id&&D.contas.find(x=>x.id===id);
   S.set=0;$('#ov').innerHTML=`<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 10px">${c?'Editar conta':'Nova conta'}</p><form data-form="conta"><input type="hidden" name="id" value="${c?c.id:''}"><label class="fl"><small>Nome</small><input class="f2" type="text" name="n" required value="${esc(c?c.n:'')}"></label><label class="fl"><small>Vencimento (ex.: dia 10)</small><input class="f2" type="text" name="d" value="${esc(c?c.d||'':'')}"></label><div class="sg" style="justify-content:flex-end;margin-top:12px">${c?bt('conta-del',c.id,'Excluir','dg','trash','style="margin-right:auto"'):''}${bt('setclose',null,'Cancelar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
-let SX=0;
+let SX=0,DEF=null;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+function instUi(){const b=$('#inst');if(b)b.hidden=!DEF||standalone()}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEF=e;instUi();if(S.set)draw()});
+addEventListener('appinstalled',()=>{DEF=null;instUi();if(S.set)draw()});
 function tabsHtml(){return TB.map(t=>`<div class="tbn${S.t===t[0]?' on':''}" data-a="tab" data-i="${t[0]}" role="button">${ic(t[1],16)}${t[2]}</div>`).join('')}
 function applyTone(){const a=$('#app');a.style.setProperty('--t1',UI.tone+'%');a.style.setProperty('--t2',(UI.tone+6)+'%');const v=$('#tv');if(v)v.textContent=UI.tone+'%'}
 function draw(){
@@ -382,7 +386,7 @@ function draw(){
   if(S.t==='fin'&&S.fsub==='plan'&&!isPh()){upd();if(!FIT){FIT=true;fitAll();const th=document.querySelector('th.cur'),m2=$('#mx');if(th&&m2&&!SX)SX=Math.max(0,th.offsetLeft-(W.t+W.c+W.v)-20)}else applyW();const m2=$('#mx');if(m2)m2.scrollLeft=SX}
   else if(S.t==='fin')upd();
   if(nt&&$('#nt'))$('#nt').value=ntv;
-  setSt()}
+  instUi();setSt()}
 function softRender(){const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$('#main').contains(a)){return}if(S.set||S.rd)return;draw()}
 function go(t){dropEmpty();S.t=t;ls('as_tab',t);S.no=null;S.nd=0;S.te=null;S.ok='';S.gm=0;resetForm();S.rd='';S.dd=null;S.set=0;S.md=null;if(t==='hoje')S.hd=0;if(t==='comp')S.fm='e';if(t==='fin')FIT=false;SX=0;draw();scrollTo(0,0)}
 function resetForm(){S.ne=0;S.nerr='';S.nh='';S.nn='';S.nr='none';S.nu=''}
@@ -472,6 +476,7 @@ const A={
   setclose:()=>{S.set=0;$('#ov').innerHTML=''},
   sync:async()=>{await push();draw()},
   backup:()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,1)],{type:'application/json'}));a.download='assistente-backup-'+today()+'.json';a.click()},
+  install:async()=>{if(!DEF){return}DEF.prompt();try{await DEF.userChoice}catch(e){}DEF=null;instUi();return 1},
   logout:()=>{CFG={repo:CFG.repo};ls('as_cfg',CFG);ls('as_sha',null);SHA=null;ST='off';S.set=0;loginView();return 1},
   local:()=>{CFG.local=1;ls('as_cfg',CFG);boot2();return 1}
 };
