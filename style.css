@@ -172,3 +172,4 @@ tr.hl td{background:var(--surface-1)}
 th.mo{position:relative;padding-left:26px;padding-right:12px}
 th.mo .mdel{position:absolute;left:5px;top:50%;transform:translateY(-50%);margin:0}
 [hidden]{display:none!important}
+.pcb{white-space:nowrap}

@@ -131,7 +131,7 @@ function occurs(ev,d){
 function items(d,hide){
   const out=[],[y,m,dd]=d.split('-').map(Number),k=y+'-'+pad(m);
   live(D.contas).forEach(c=>{const amt=c.v[k];if(!(amt>0))return;const day=dueDay(c);if(day==null||Math.min(day,dim(y,m))!==dd)return;const paid=!!c.p[k];if(hide&&paid)return;
-    out.push({v:1,t:'',n:(c.card?'Fatura ':'')+c.n,dk:d,id:c.id,paid,amt})});
+    out.push({v:1,t:'',n:(c.card?'Fatura ':'')+c.n,dk:d,id:c.id,paid,st:c.p[k],amt})});
   live(D.eventos).filter(e=>occurs(e,d)).sort((a,b)=>(a.h||'')<(b.h||'')?-1:1).forEach(e=>out.push({v:0,t:e.h||'',n:e.t,dk:d,id:e.id,rec:e.r&&e.r!=='none'}));
   return out}
 function faturaKeys(card,date,rule,n){
@@ -153,7 +153,7 @@ const TG={'Trabalho':['var(--bg-accent)','var(--text-accent)'],'Casa':['var(--bg
 const TL=['Geral','Casa','Finanças','Compras','Trabalho'];
 const RED='var(--text-danger)',BLU='var(--text-accent)',AMB='var(--text-warning)',GRN='var(--text-success)';
 UI.tone=UI.tone??6;UI.w=UI.w||{};
-const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',nh:'',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:'',md:null};
+const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',nh:'',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:'',md:null,pc:''};
 let LAN=[];
 const isPh=()=>matchMedia('(max-width:760px)').matches;
 const ic=(n,s=16,c)=>`<svg class="ic" width="${s}" height="${s}" style="${c?'color:'+c:''}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
@@ -170,7 +170,9 @@ const openT=()=>live(D.tarefas).filter(t=>!t.d).sort((a,b)=>(b.s||0)-(a.s||0));
 const pdate=()=>S.g.dia?addD(today(),-1):today();
 
 function act(x){
-  if(x.v)return ibt('ppay',x.dk+'|'+x.id,'check','Dar baixa','sm2',x.paid?GRN:null);
+  if(x.v){const key=x.dk+'|'+x.id;
+    if(S.pc===key)return `<span style="display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap">${bt('ppay2',key+'|1','Desta conta','sm3 pcb')}${bt('ppay2',key+'|2','De outra conta','sm3 pcb')}</span>`;
+    return x.paid?ibt('punpay',key,'check','Desfazer pagamento','sm2',x.st===2?BLU:GRN):ibt('pchoose',key,'check','Dar baixa','sm2',RED)}
   const key=x.dk+'|'+x.id;
   if(S.dc===key)return bt('edel',key,'Excluir?','dg sm3');
   return ibt('edel',key,'trash','Excluir compromisso','sm2',RED)}
@@ -185,7 +187,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 7</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 8</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -232,7 +234,7 @@ function vComp(){
   let n=0;
   for(let i=0;i<30;i++){const d=addD(t0,i),dt=pd(d);items(d,true).forEach(x=>{
     if(S.fm==='e'&&x.v)return;if(S.fm==='v'&&!x.v)return;n++;
-    if(isPh()){const key=d+'-'+n,op=S.o===key;h+=`<div class="rw2" data-a="open" data-i="${key}" style="align-items:flex-start;gap:8px">${x.v?ic('wallet',15,RED):ic('clock',15,BLU)}<div style="flex:1;min-width:0"><div class="ln${op?' op':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)} – ${x.v?'pagar':x.t} – </span>${nmx(x)}</div>${op?`<div style="margin-top:6px">${bt('goto',d,'Abrir na agenda','sm3')}</div>`:''}</div>${act(x)}</div>`;return}
+    if(isPh()){const key=d+'-'+n,op=S.o===key;h+=`<div class="rw2" data-a="open" data-i="${key}" style="align-items:flex-start;gap:8px">${x.v?ic('wallet',15,RED):ic('clock',15,BLU)}<div style="flex:1;min-width:0"><div class="ln${op?' op':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)} – ${x.v?'pagar':x.t} – </span>${nmx(x)}</div>${S.pc===d+'|'+x.id?`<div style="margin-top:6px">${act(x)}</div>`:op?`<div style="margin-top:6px">${bt('goto',d,'Abrir na agenda','sm3')}</div>`:''}</div>${S.pc===d+'|'+x.id?'':act(x)}</div>`;return}
     h+=`<div class="lr${i===0?' tdy':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)}</span><span>${x.v?'pagar':x.t}</span><span style="display:flex;align-items:center;gap:8px;min-width:0">${x.v?ic('wallet',16,RED):ic('clock',16,BLU)}<span style="min-width:0">${nmx(x)}</span></span><span style="display:flex;gap:6px;justify-content:flex-end;align-items:center">${bt('goto',d,'Agenda','sm3 gotob')}${act(x)}</span></div>`})}
   if(!n)h+='<p class="sm" style="padding:12px 4px">Nada para mostrar neste filtro.</p>';
   return h+'<p class="sm" style="margin:10px 0 0;font-size:11px">Os itens de hoje ficam em cinza mais claro. Lixeira apaga o compromisso, também na agenda. Check dá baixa no pagamento, também em Finanças.</p></div>'}
@@ -433,7 +435,9 @@ const A={
   gclose:()=>{S.gm=0},gcard:(el,v)=>{S.g.k=v;S.gerr=''},gpar:(el,v)=>{S.g.par=+v},gmode:(el,v)=>{S.g.mode=v},gdia:(el,v)=>{S.g.dia=+v},
   glan:()=>lancar(),gundo:()=>desfazer(),
   flt:(el,v)=>{S.fm=v;S.o=''},open:(el,v)=>{S.o=S.o===v?'':v},fcol:()=>{S.fc=S.fc?0:1},
-  ppay:(el,v)=>{const[d,id]=v.split('|'),c=find(D.contas,id),k=mk(d);if(c.p[k])delete c.p[k];else c.p[k]=1;touch(c)},
+  pchoose:(el,v)=>{S.pc=v},
+  punpay:(el,v)=>{const[d,id]=v.split('|'),c=find(D.contas,id);delete c.p[mk(d)];touch(c)},
+  ppay2:(el,v)=>{const[d,id,n]=v.split('|'),c=find(D.contas,id);c.p[mk(d)]=+n;S.pc='';touch(c)},
   edel:(el,v)=>{const e=find(D.eventos,v.split('|')[1]);if(e&&e.r&&e.r!=='none'){S.rd=v;S.rch='one';S.dc=''}else if(S.dc===v){delEv(v,'all')}else S.dc=v},
   rdsel:(el,v)=>{S.rch=v},rdno:()=>{S.rd=''},rdok:()=>{delEv(S.rd,S.rch)},
   goto:(el,v)=>{S.sel=v;S.ref=v;S.t='agenda';resetForm()},
@@ -499,11 +503,12 @@ function loginView(err=''){
 
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]');
-  if(!el){if(S.pk){S.pk=null;draw()}return}
+  if(!el){if(S.pk||S.pc){S.pk=null;S.pc='';draw()}return}
   const a=el.dataset.a,v=el.dataset.i;
   if(el.tagName==='A')e.preventDefault();
   const gv=$('#gv');if(gv)S.g.v=gv.value;
   if(a!=='edel')S.dc='';
+  if(a!=='pchoose')S.pc='';
   if(a!=='pk'&&a!=='setc')S.pk=null;
   const fn=A[a];if(!fn)return;
   const r=fn(el,v);if(r===1)return;
