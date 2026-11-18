@@ -173,3 +173,5 @@ th.mo{position:relative;padding-left:26px;padding-right:12px}
 th.mo .mdel{position:absolute;left:5px;top:50%;transform:translateY(-50%);margin:0}
 [hidden]{display:none!important}
 .pcb{white-space:nowrap}
+.pv{width:96px!important;flex:0 0 auto;text-align:right;height:30px;padding:0 8px;font-size:13px}@media(max-width:760px){.pv{width:84px!important}}
+.pv{width:96px!important;flex:0 0 auto;text-align:right;height:30px;padding:0 8px;font-size:13px}@media(max-width:760px){.pv{width:84px!important}}
