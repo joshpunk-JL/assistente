@@ -170,10 +170,10 @@ const openT=()=>live(D.tarefas).filter(t=>!t.d).sort((a,b)=>(b.s||0)-(a.s||0));
 const pdate=()=>S.g.dia?addD(today(),-1):today();
 
 const vin=x=>x.v?`<input class="f2 pv" type="text" inputmode="decimal" data-c="${x.id}|${mk(x.dk)}" value="${nf(x.amt)}" aria-label="Valor da conta" title="Alterar o valor muda também a planilha de Finanças">`:'';
+const LEG='<p class="sm" style="font-size:11px;margin:10px 0 0">Check dos pagamentos: 1º clique <b style="font-weight:500;color:var(--text-success)">verde</b> = pago desta conta (desconta do saldo); 2º clique <b style="font-weight:500;color:var(--text-accent)">azul</b> = pago de outra conta (não desconta); 3º clique volta para a pagar. O valor pode ser alterado aqui e muda também em Finanças.</p>';
+const pst=x=>x.paid?'color:var(--text-secondary);text-decoration:line-through;':'';
 function act(x){
-  if(x.v){const key=x.dk+'|'+x.id;
-    if(S.pc===key)return `<span style="display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap">${bt('ppay2',key+'|1','Desta conta','sm3 pcb')}${bt('ppay2',key+'|2','De outra conta','sm3 pcb')}</span>`;
-    return x.paid?ibt('punpay',key,'check','Desfazer pagamento','sm2',x.st===2?BLU:GRN):ibt('pchoose',key,'check','Dar baixa','sm2',RED)}
+  if(x.v){const key=x.dk+'|'+x.id;return `<span data-a="ppay" data-i="${key}" role="button" aria-label="Alternar: a pagar, pago desta conta, pago de outra conta" style="display:flex;cursor:pointer;padding:2px">${ic(x.paid?'circle-check':'circle',24,x.paid?(x.st===2?BLU:GRN):RED)}</span>`}
   const key=x.dk+'|'+x.id;
   if(S.dc===key)return bt('edel',key,'Excluir?','dg sm3');
   return ibt('edel',key,'trash','Excluir compromisso','sm2',RED)}
@@ -188,7 +188,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 9</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 10</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -214,31 +214,31 @@ function dayTitle(o,d){if(o===0)return 'Hoje';if(o===1)return 'Amanhã';if(o===2
 
 /* ===== telas ===== */
 function vHoje(){
-  const d=addD(today(),S.hd),dt=pd(d),it=items(d,true);
+  const d=addD(today(),S.hd),dt=pd(d),it=items(d,false);
   let h=`<div class="ctr"><div class="hgrid"><span class="sm">${WF[dt.getDay()]}, ${dt.getDate()} de ${MFl[dt.getMonth()]}</span><div style="display:flex;align-items:center;gap:12px">${ibt('hprev',null,'chevron-left','Dia anterior')}<span style="min-width:150px;text-align:center;font-size:22px;font-weight:500">${dayTitle(S.hd,d)}</span>${ibt('hnext',null,'chevron-right','Próximo dia')}</div><div style="text-align:right">${bt('gopen',null,'Gastos do dia','','credit-card')}</div></div>`;
   if(S.gm)h+=gform();
   if(S.ok)h+=`<div class="cd2" style="margin-bottom:14px;border-color:var(--border-success);display:flex;align-items:center;gap:10px;padding:10px 14px">${ic('circle-check',18,GRN)}<span style="flex:1;font-size:13px">${esc(S.ok)}</span>${LAN.length?bt('gundo',null,'Desfazer'):''}</div>`;
   h+=`<div class="col"><div class="cd2"><p style="font-size:14px;font-weight:500;margin:0 0 8px">${ic('calendar',16)} Compromissos ${S.hd===0?'de hoje':'do dia'}</p>`;
   if(!it.length)h+=`<p class="sm" style="margin:0">Nada marcado ${S.hd===0?'para hoje':'neste dia'}.</p>`;
-  it.forEach(x=>{h+=`<div class="rw2" style="cursor:default"><span class="sm" style="width:48px">${x.v?'pagar':x.t}</span><span style="flex:1;min-width:0;font-size:13px">${nmx(x)}</span>${x.v?ic('wallet',16,RED):''}${vin(x)}${act(x)}</div>`});
+  it.forEach(x=>{h+=`<div class="rw2" style="cursor:default"><span class="sm" style="width:48px">${x.v?'pagar':x.t}</span><span style="flex:1;min-width:0;font-size:13px;${pst(x)}">${nmx(x)}</span>${x.v?ic('wallet',16,RED):''}${vin(x)}${act(x)}</div>`});
   const o=openT(),top=o.slice(0,8);
   h+=`</div><div class="cd2"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;font-weight:500">${ic('checkbox',16)} Tarefas (${o.length})</span><span data-a="tab" data-i="tar" style="font-size:12px;color:var(--text-accent);cursor:pointer">Ver todas</span></div>`;
   top.forEach(x=>{h+=`<div class="rw2" data-a="tdone" data-i="${x.id}">${ic('circle',20,'var(--text-muted)')}<span style="flex:1;min-width:0;font-size:13px">${esc(x.n)}</span>${tag(x.l)}${x.s?ic('star',15,AMB):''}</div>`});
   if(o.length>8)h+=`<p class="sm" style="margin:6px 0 0">e mais ${o.length-8} tarefas</p>`;
   if(!top.length)h+='<p class="sm" style="margin:4px 0 0">Tudo feito por aqui.</p>';
-  return h+'</div></div></div>'}
+  return h+'</div></div>'+LEG+'</div>'}
 function vComp(){
   const F=[['e','Compromissos','var(--text-accent)'],['v','Pagamentos','var(--text-danger)'],['all','Todos','']],t0=today();
   let h=`<div class="ctr"><div style="display:flex;align-items:flex-end;gap:28px;margin-bottom:12px;flex-wrap:wrap"><div><p class="h1">Compromissos</p><p class="sm" style="margin:2px 0 0">Próximos 30 dias</p></div><div class="sg">`;
   F.forEach(f=>{h+=bt('flt',f[0],(f[2]?`<span class="dot" style="background:${f[2]};width:7px;height:7px"></span>`:'')+f[1],S.fm===f[0]?'sa':'')});
   h+='</div></div><div class="lh"><span>Data</span><span>Hora</span><span>Descrição</span><span></span></div>';
   let n=0;
-  for(let i=0;i<30;i++){const d=addD(t0,i),dt=pd(d);items(d,true).forEach(x=>{
+  for(let i=0;i<30;i++){const d=addD(t0,i),dt=pd(d);items(d,false).forEach(x=>{
     if(S.fm==='e'&&x.v)return;if(S.fm==='v'&&!x.v)return;n++;
-    if(isPh()){const key=d+'-'+n,op=S.o===key;h+=`<div class="rw2" data-a="open" data-i="${key}" style="align-items:flex-start;gap:8px">${x.v?ic('wallet',15,RED):ic('clock',15,BLU)}<div style="flex:1;min-width:0"><div class="ln${op?' op':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)} – ${x.v?'pagar':x.t} – </span>${nmx(x)}</div>${S.pc===d+'|'+x.id?`<div style="margin-top:6px">${act(x)}</div>`:op?`<div style="margin-top:6px">${bt('goto',d,'Abrir na agenda','sm3')}</div>`:''}</div>${vin(x)}${S.pc===d+'|'+x.id?'':act(x)}</div>`;return}
-    h+=`<div class="lr${i===0?' tdy':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)}</span><span>${x.v?'pagar':x.t}</span><span style="display:flex;align-items:center;gap:8px;min-width:0">${x.v?ic('wallet',16,RED):ic('clock',16,BLU)}<span style="min-width:0">${nmx(x)}</span></span><span style="display:flex;gap:6px;justify-content:flex-end;align-items:center">${bt('goto',d,'Agenda','sm3 gotob')}${vin(x)}${act(x)}</span></div>`})}
+    if(isPh()){const key=d+'-'+n,op=S.o===key;h+=`<div class="rw2" data-a="open" data-i="${key}" style="align-items:flex-start;gap:8px">${x.v?ic('wallet',15,RED):ic('clock',15,BLU)}<div style="flex:1;min-width:0"><div class="ln${op?' op':''}" style="${pst(x)}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)} – ${x.v?'pagar':x.t} – </span>${nmx(x)}</div>${op?`<div style="margin-top:6px">${bt('goto',d,'Abrir na agenda','sm3')}</div>`:''}</div>${vin(x)}${act(x)}</div>`;return}
+    h+=`<div class="lr${i===0?' tdy':''}"><span style="color:var(--text-secondary)">${WS[dt.getDay()]}, ${dbr(d).slice(0,5)}</span><span>${x.v?'pagar':x.t}</span><span style="display:flex;align-items:center;gap:8px;min-width:0">${x.v?ic('wallet',16,RED):ic('clock',16,BLU)}<span style="min-width:0;${pst(x)}">${nmx(x)}</span></span><span style="display:flex;gap:6px;justify-content:flex-end;align-items:center">${bt('goto',d,'Agenda','sm3 gotob')}${vin(x)}${act(x)}</span></div>`})}
   if(!n)h+='<p class="sm" style="padding:12px 4px">Nada para mostrar neste filtro.</p>';
-  return h+'<p class="sm" style="margin:10px 0 0;font-size:11px">Os itens de hoje ficam em cinza mais claro. Lixeira apaga o compromisso, também na agenda. Check dá baixa no pagamento, também em Finanças.</p></div>'}
+  return h+'<p class="sm" style="margin:10px 0 0;font-size:11px">Os itens de hoje ficam em cinza mais claro. Lixeira apaga o compromisso, também na agenda.</p>${LEG}</div>'}
 function chips(d){const it=items(d,false);let h='',dots='';
   it.slice(0,3).forEach(x=>{h+=`<div class="chip ${x.v?'cv':'ce'}" style="${x.paid?'opacity:.5;text-decoration:line-through':''}">${x.v?'pagar ':x.t+' '}${esc(x.n)}</div>`});
   if(it.length>3)h+=`<div class="sm" style="font-size:11px;margin-top:3px">+${it.length-3} mais</div>`;
@@ -266,7 +266,7 @@ function vAgenda(){
     if(S.nr!=='none')h+=`<input class="f2" id="nve" type="text" placeholder="Repetir até dd/mm/aaaa (opcional)" value="${esc(S.nu)}" style="margin-bottom:6px!important">`;
     h+=`<p style="font-size:12px;color:var(--text-danger);margin:0 0 6px">${S.nerr}</p><div class="sg">${bt('ecancel',null,'Cancelar')}${bt('esave',null,'Salvar','sa')}</div></div>`}
   else h+=`<div style="margin-top:10px">${bt('enew',null,'Novo compromisso','','plus')}</div>`;
-  h+=`</div></div><div class="calc">${grid}<p class="sm" style="font-size:11px;margin:8px 0 0"><span class="dot" style="background:var(--text-accent);width:7px;height:7px"></span> compromisso &nbsp; <span class="dot" style="background:var(--text-danger);width:7px;height:7px"></span> pagamento &nbsp; ${ic('repeat',12,'var(--text-muted)')} recorrente. Clique em um dia para ver e editar ao lado.</p></div></div>`;
+  h+=`</div></div><div class="calc">${grid}<p class="sm" style="font-size:11px;margin:8px 0 0"><span class="dot" style="background:var(--text-accent);width:7px;height:7px"></span> compromisso &nbsp; <span class="dot" style="background:var(--text-danger);width:7px;height:7px"></span> pagamento &nbsp; ${ic('repeat',12,'var(--text-muted)')} recorrente. Clique em um dia para ver e editar ao lado.</p>${LEG}</div></div>`;
   return h}
 function vTar(){
   const L=['Todas',...TL];
@@ -337,7 +337,7 @@ function vPlan(){
       if(S.pk===c.id)h+='<div class="pop">'+PAL.map(p=>`<span class="sw" data-a="setc" data-i="${c.id}" data-c="${p}" style="background:${p}" role="button"></span>`).join('')+`<span class="sw" data-a="setc" data-i="${c.id}" data-c="" role="button" aria-label="Sem cor">${ic('x',12)}</span></div>`;
       h+='</div></td>'}
     h+=`<td class="l stk c2"><input class="in ds" data-d="${c.id}" value="${esc(dueTxt(c))}" placeholder="sem data" ${cd?'readonly title="Vencimento do cartão: ajuste na aba Cartões"':''} aria-label="Vencimento"></td>`;
-    M.forEach(k=>{const v=c.v[k]||0,pg=!!c.p[k];h+=`<td><div class="cl2"><input class="in r ${pg?'pg':'up'}${isEd(c,k)?' ed':''}" data-c="${c.id}|${k}" value="${v?nf(v):''}" placeholder="0,00" inputmode="decimal" aria-label="Valor"><span class="ck${v>0?'':' gh'}" data-a="pd" data-i="${c.id}|${k}" role="button" aria-label="Alternar: a pagar, pago desta conta, pago de outra conta" title="Clique: a pagar → pago desta conta (verde) → pago de outra conta (azul, não desconta)">${ic(pg?'circle-check':'circle',18,pk(c,k))}</span></div></td>`});
+    M.forEach(k=>{const v=c.v[k]||0,pg=!!c.p[k];h+=`<td><div class="cl2"><input class="in r ${pg?'pg':'up'}${isEd(c,k)?' ed':''}" data-c="${c.id}|${k}" value="${v?nf(v):''}" placeholder="0,00" inputmode="decimal" aria-label="Valor"><span class="ck" data-a="pd" data-i="${c.id}|${k}" role="button" aria-label="Alternar: a pagar, pago desta conta, pago de outra conta" title="Clique: a pagar → pago desta conta (verde) → pago de outra conta (azul, não desconta)">${ic(pg?'circle-check':'circle',18,pk(c,k))}</span></div></td>`});
     h+='</tr>'});
   h+='</tbody><tfoot class="ft"><tr><td colspan="3" class="l lab stk cs" style="background:var(--surface-1)">− Despesas do mês</td>';
   M.forEach(k=>{h+=`<td class="num" id="ds${k}" style="color:var(--text-danger)"></td>`});
@@ -436,9 +436,7 @@ const A={
   gclose:()=>{S.gm=0},gcard:(el,v)=>{S.g.k=v;S.gerr=''},gpar:(el,v)=>{S.g.par=+v},gmode:(el,v)=>{S.g.mode=v},gdia:(el,v)=>{S.g.dia=+v},
   glan:()=>lancar(),gundo:()=>desfazer(),
   flt:(el,v)=>{S.fm=v;S.o=''},open:(el,v)=>{S.o=S.o===v?'':v},fcol:()=>{S.fc=S.fc?0:1},
-  pchoose:(el,v)=>{S.pc=v},
-  punpay:(el,v)=>{const[d,id]=v.split('|'),c=find(D.contas,id);delete c.p[mk(d)];touch(c)},
-  ppay2:(el,v)=>{const[d,id,n]=v.split('|'),c=find(D.contas,id);c.p[mk(d)]=+n;S.pc='';touch(c)},
+  ppay:(el,v)=>{const[d,id]=v.split('|'),c=find(D.contas,id);cyc(c,mk(d));touch(c)},
   edel:(el,v)=>{const e=find(D.eventos,v.split('|')[1]);if(e&&e.r&&e.r!=='none'){S.rd=v;S.rch='one';S.dc=''}else if(S.dc===v){delEv(v,'all')}else S.dc=v},
   rdsel:(el,v)=>{S.rch=v},rdno:()=>{S.rd=''},rdok:()=>{delEv(S.rd,S.rch)},
   goto:(el,v)=>{S.sel=v;S.ref=v;S.t='agenda';resetForm()},
