@@ -146,7 +146,7 @@ const isEd=(c,k)=>c.o&&c.o[k]!==undefined&&r2(c.o[k])!==r2(c.v[k]||0);
 /* ===== estado de tela ===== */
 const WS=['dom','seg','ter','qua','qui','sex','sáb'];
 const WF=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-const WH=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const WH=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MFl=MESL.map(x=>x.toLowerCase());
 const TB=[['hoje','home','Hoje'],['comp','list-details','Compromissos'],['agenda','calendar','Agenda'],['tar','checkbox','Tarefas'],['notas','note','Notas'],['fin','wallet','Finanças']];
 const TG={'Trabalho':['var(--bg-accent)','var(--text-accent)'],'Casa':['var(--bg-success)','var(--text-success)'],'Finanças':['var(--bg-warning)','var(--text-warning)'],'Compras':['var(--bg-pro)','var(--text-pro)'],'Geral':['var(--surface-1)','var(--text-secondary)']};
@@ -161,7 +161,7 @@ const bt=(a,i,label,cls,icon,extra)=>`<div class="bt${cls?' '+cls:''}" data-a="$
 const ibt=(a,i,icon,label,cls,col)=>`<div class="bt ic${cls?' '+cls:''}" data-a="${a}"${i!=null?` data-i="${esc(i)}"`:''} role="button" aria-label="${label}">${ic(icon,16,col)}</div>`;
 const tag=(l,a,i)=>{const c=TG[l]||TG.Geral;return `<span class="tg"${a?` data-a="${a}" data-i="${esc(i)}"`:''} style="background:${c[0]};color:${c[1]}">${esc(l)}</span>`};
 const REC={day:'Todos os dias',week:'Toda semana',biweek:'A cada 15 dias',month:'Todo mês'};
-const ws=d=>addD(d,-((pd(d).getDay()+6)%7));
+const ws=d=>addD(d,-pd(d).getDay());
 function recOpts(d){const dt=pd(d),w=WF[dt.getDay()],fem=dt.getDay()>=1&&dt.getDay()<=5;return[['none','Não se repete'],['day','Todos os dias'],['week',(fem?'Toda ':'Todo ')+w],['biweek','A cada 15 dias'],['month','Todo mês, no dia '+dt.getDate()]]}
 const nmx=x=>esc(x.n)+(x.rec?` <span title="Compromisso recorrente">${ic('repeat',13,'var(--text-muted)')}</span>`:'');
 const pn=s=>{const v=parseNum(s);return v==null||v===undefined?0:v};
@@ -188,7 +188,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 13</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 14</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -248,7 +248,7 @@ const cellW=(d,out)=>`<div class="cc${out?' out':''}${d===S.sel?' sel':''}${d===
 function vAgenda(){
   let title,grid=`<div class="cal${S.av==='sem'?' wk':''}">`;
   WH.forEach(w=>{grid+=`<div class="ch">${w}</div>`});
-  if(S.av==='mes'){const f=mk(S.ref)+'-01',st=ws(f),fd=pd(f),len=dim(fd.getFullYear(),fd.getMonth()+1),rows=Math.ceil(((fd.getDay()+6)%7+len)/7);
+  if(S.av==='mes'){const f=mk(S.ref)+'-01',st=ws(f),fd=pd(f),len=dim(fd.getFullYear(),fd.getMonth()+1),rows=Math.ceil((fd.getDay()+len)/7);
     title=MFl[fd.getMonth()]+' de '+fd.getFullYear();
     for(let i=0;i<rows*7;i++){const d=addD(st,i);grid+=cellW(d,mk(d)!==mk(f))}}
   else{const a=ws(S.ref),b=addD(a,6),pa=pd(a),pb=pd(b);
