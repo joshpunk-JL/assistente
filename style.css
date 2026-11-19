@@ -175,3 +175,6 @@ th.mo .mdel{position:absolute;left:5px;top:50%;transform:translateY(-50%);margin
 .pcb{white-space:nowrap}
 .pv{width:96px!important;flex:0 0 auto;text-align:right;height:30px;padding:0 8px;font-size:13px}@media(max-width:760px){.pv{width:84px!important}}
 .pv{width:96px!important;flex:0 0 auto;text-align:right;height:30px;padding:0 8px;font-size:13px}@media(max-width:760px){.pv{width:84px!important}}
+.cc.we{background:color-mix(in srgb,var(--text-primary) var(--t1,6%),var(--surface-2))}
+.cc.we.sel{background:var(--bg-accent)}
+.ch.we{background:color-mix(in srgb,var(--text-primary) var(--t1,6%),var(--surface-1))}

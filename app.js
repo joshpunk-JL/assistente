@@ -146,7 +146,7 @@ const isEd=(c,k)=>c.o&&c.o[k]!==undefined&&r2(c.o[k])!==r2(c.v[k]||0);
 /* ===== estado de tela ===== */
 const WS=['dom','seg','ter','qua','qui','sex','sáb'];
 const WF=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-const WH=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const WH=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const MFl=MESL.map(x=>x.toLowerCase());
 const TB=[['hoje','home','Hoje'],['comp','list-details','Compromissos'],['agenda','calendar','Agenda'],['tar','checkbox','Tarefas'],['notas','note','Notas'],['fin','wallet','Finanças']];
 const TG={'Trabalho':['var(--bg-accent)','var(--text-accent)'],'Casa':['var(--bg-success)','var(--text-success)'],'Finanças':['var(--bg-warning)','var(--text-warning)'],'Compras':['var(--bg-pro)','var(--text-pro)'],'Geral':['var(--surface-1)','var(--text-secondary)']};
@@ -161,7 +161,7 @@ const bt=(a,i,label,cls,icon,extra)=>`<div class="bt${cls?' '+cls:''}" data-a="$
 const ibt=(a,i,icon,label,cls,col)=>`<div class="bt ic${cls?' '+cls:''}" data-a="${a}"${i!=null?` data-i="${esc(i)}"`:''} role="button" aria-label="${label}">${ic(icon,16,col)}</div>`;
 const tag=(l,a,i)=>{const c=TG[l]||TG.Geral;return `<span class="tg"${a?` data-a="${a}" data-i="${esc(i)}"`:''} style="background:${c[0]};color:${c[1]}">${esc(l)}</span>`};
 const REC={day:'Todos os dias',week:'Toda semana',biweek:'A cada 15 dias',month:'Todo mês'};
-const ws=d=>addD(d,-pd(d).getDay());
+const ws=d=>addD(d,-((pd(d).getDay()+6)%7));
 function recOpts(d){const dt=pd(d),w=WF[dt.getDay()],fem=dt.getDay()>=1&&dt.getDay()<=5;return[['none','Não se repete'],['day','Todos os dias'],['week',(fem?'Toda ':'Todo ')+w],['biweek','A cada 15 dias'],['month','Todo mês, no dia '+dt.getDate()]]}
 const nmx=x=>esc(x.n)+(x.rec?` <span title="Compromisso recorrente">${ic('repeat',13,'var(--text-muted)')}</span>`:'');
 const pn=s=>{const v=parseNum(s);return v==null||v===undefined?0:v};
@@ -188,7 +188,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 14</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 15</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -244,11 +244,11 @@ function chips(d){const it=items(d,false);let h='',dots='';
   if(it.length>3)h+=`<div class="sm" style="font-size:11px;margin-top:3px">+${it.length-3} mais</div>`;
   it.slice(0,5).forEach(x=>{dots+=`<i class="${x.v?'v':''}"></i>`});
   return h+`<div class="dots">${dots}</div>`}
-const cellW=(d,out)=>`<div class="cc${out?' out':''}${d===S.sel?' sel':''}${d===today()?' tdy':''}" data-a="aday" data-i="${d}"><span class="dn">${+d.slice(8)}</span>${chips(d)}</div>`;
+const cellW=(d,out)=>`<div class="cc${[0,6].includes(pd(d).getDay())?' we':''}${out?' out':''}${d===S.sel?' sel':''}${d===today()?' tdy':''}" data-a="aday" data-i="${d}"><span class="dn">${+d.slice(8)}</span>${chips(d)}</div>`;
 function vAgenda(){
   let title,grid=`<div class="cal${S.av==='sem'?' wk':''}">`;
-  WH.forEach(w=>{grid+=`<div class="ch">${w}</div>`});
-  if(S.av==='mes'){const f=mk(S.ref)+'-01',st=ws(f),fd=pd(f),len=dim(fd.getFullYear(),fd.getMonth()+1),rows=Math.ceil((fd.getDay()+len)/7);
+  WH.forEach((w,i)=>{grid+=`<div class="ch${i>4?' we':''}">${w}</div>`});
+  if(S.av==='mes'){const f=mk(S.ref)+'-01',st=ws(f),fd=pd(f),len=dim(fd.getFullYear(),fd.getMonth()+1),rows=Math.ceil(((fd.getDay()+6)%7+len)/7);
     title=MFl[fd.getMonth()]+' de '+fd.getFullYear();
     for(let i=0;i<rows*7;i++){const d=addD(st,i);grid+=cellW(d,mk(d)!==mk(f))}}
   else{const a=ws(S.ref),b=addD(a,6),pa=pd(a),pb=pd(b);
@@ -266,7 +266,7 @@ function vAgenda(){
     if(S.nr!=='none')h+=`<input class="f2" id="nve" type="text" placeholder="Repetir até dd/mm/aaaa (opcional)" value="${esc(S.nu)}" style="margin-bottom:6px!important">`;
     h+=`<p style="font-size:12px;color:var(--text-danger);margin:0 0 6px">${S.nerr}</p><div class="sg">${bt('ecancel',null,'Cancelar')}${bt('esave',null,'Salvar','sa')}</div></div>`}
   else h+=`<div style="margin-top:10px">${bt('enew',null,'Novo compromisso','','plus')}</div>`;
-  h+=`</div></div><div class="calc">${grid}<p class="sm" style="font-size:11px;margin:8px 0 0"><span class="dot" style="background:var(--text-accent);width:7px;height:7px"></span> compromisso &nbsp; <span class="dot" style="background:var(--text-danger);width:7px;height:7px"></span> pagamento &nbsp; ${ic('repeat',12,'var(--text-muted)')} recorrente. Clique em um dia para ver e editar ao lado.</p>${LEG}</div></div>`;
+  h+=`</div></div><div class="calc"><div class="tc" style="margin-top:0"><span>Tom de cinza do fim de semana</span><input type="range" min="0" max="24" step="1" value="${UI.tone}" data-t="1" aria-label="Tom de cinza"><span id="tv" style="min-width:30px">${UI.tone}%</span>${bt('trst',null,'Padrão','sm3')}</div>${grid}<p class="sm" style="font-size:11px;margin:8px 0 0"><span class="dot" style="background:var(--text-accent);width:7px;height:7px"></span> compromisso &nbsp; <span class="dot" style="background:var(--text-danger);width:7px;height:7px"></span> pagamento &nbsp; ${ic('repeat',12,'var(--text-muted)')} recorrente. Clique em um dia para ver e editar ao lado.</p>${LEG}</div></div>`;
   return h}
 function vTar(){
   const L=['Todas',...TL];
