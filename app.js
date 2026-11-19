@@ -42,7 +42,7 @@ function newData(){
 let CFG=lg('as_cfg',{});           // {token, repo}  (só neste aparelho)
 let D=lg('as_data',null)||newData();
 let SHA=lg('as_sha',null),ETAG=null;
-const UI=lg('as_ui',{tone:0});
+const UI=lg('as_ui',{tone:6});
 function ensureShape(){for(const k of['cards','contas','eventos','tarefas','notas'])if(!Array.isArray(D[k]))D[k]=[];if(!D.meses)D.meses={}}
 ensureShape();
 function mergeList(a=[],b=[]){const m=new Map();for(const it of a)m.set(it.id,it);
@@ -153,7 +153,7 @@ const TG={'Trabalho':['var(--bg-accent)','var(--text-accent)'],'Casa':['var(--bg
 const TL=['Geral','Casa','Finanças','Compras','Trabalho'];
 const RED='var(--text-danger)',BLU='var(--text-accent)',AMB='var(--text-warning)',GRN='var(--text-success)';
 UI.tone=UI.tone??6;UI.w=UI.w||{};
-const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',nh:'',nm:'00',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:'',md:null,pc:''};
+const S={t:lg('as_tab','hoje'),hd:0,fm:'e',av:'mes',sel:today(),ref:today(),ne:0,nerr:'',ee:'',ed:'',nh:'',nm:'00',nn:'',nr:'none',nu:'',rd:'',rch:'one',dc:'',tl:'Todas',te:null,no:null,nd:0,q:'',gm:0,g:{k:'',v:'',par:0,n:12,mode:'tot',dia:0},gerr:'',ok:'',cr:'atual',fsub:'plan',dd:null,pk:null,err:'',set:0,fm2:mk(today()),fe:0,fc:1,o:'',md:null,pc:''};
 let LAN=[];
 const isPh=()=>matchMedia('(max-width:760px)').matches;
 const ic=(n,s=16,c)=>`<svg class="ic" width="${s}" height="${s}" style="${c?'color:'+c:''}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
@@ -175,8 +175,9 @@ const pst=x=>x.paid?'color:var(--text-secondary);text-decoration:line-through;':
 function act(x){
   if(x.v){const key=x.dk+'|'+x.id;return `<span data-a="ppay" data-i="${key}" role="button" aria-label="Alternar: a pagar, pago desta conta, pago de outra conta" style="display:flex;cursor:pointer;padding:2px">${ic(x.paid?'circle-check':'circle',24,x.paid?(x.st===2?BLU:GRN):RED)}</span>`}
   const key=x.dk+'|'+x.id;
-  if(S.dc===key)return bt('edel',key,'Excluir?','dg sm3');
-  return ibt('edel',key,'trash','Excluir compromisso','sm2',RED)}
+  const ed=ibt('eedit',key,'pencil','Editar compromisso','sm2');
+  if(S.dc===key)return `<span style="display:inline-flex;gap:6px;align-items:center">${ed}${bt('edel',key,'Excluir?','dg sm3')}</span>`;
+  return `<span style="display:inline-flex;gap:6px;align-items:center">${ed}${ibt('edel',key,'trash','Excluir compromisso','sm2',RED)}</span>`}
 function modalRD(){
   if(!S.rd)return '';const[date,id]=S.rd.split('|'),e=D.eventos.find(x=>x.id===id);if(!e)return '';
   const O=[['one','Só este compromisso'],['next','Este e os próximos'],['all','Todos os compromissos da série']];
@@ -188,7 +189,7 @@ function modalMD(){
   return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Excluir ${mlab(k)}?</p><p class="sm" style="margin:0 0 12px">Os valores, a entrada e as marcações de pago deste mês serão apagados, em todos os aparelhos. O saldo dos meses seguintes é recalculado.</p><div class="sg" style="justify-content:flex-end">${bt('mdno',null,'Cancelar')}${bt('mdok',k,'Excluir','dg')}</div></div></div>`}
 function modalSet(){
   if(!S.set)return '';
-  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 15</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
+  return `<div class="ov"><div class="md"><p style="font-size:16px;font-weight:500;margin:0 0 4px">Ajustes <span class="sm">· versão 16</span></p><p class="sm" style="margin:0 0 12px">${!CFG.token?'Sem sincronização: os dados ficam só neste aparelho.':lg('as_dirty',0)?'Há alterações ainda não enviadas.':'Tudo sincronizado.'}${ST==='err'?' Erro: '+esc(lastErr):''}</p>
   <div class="sg" style="margin-bottom:14px">${bt('sync',null,'Sincronizar agora','','refresh')}${bt('backup',null,'Baixar backup','','download')}${DEF&&!standalone()?bt('install',null,'Instalar no computador','sa','download'):''}</div>${!standalone()&&!DEF?'<p class="sm" style="margin:-4px 0 12px;font-size:12px">Para instalar como app: no Chrome ou Edge, clique no ícone de instalar na barra de endereço (ou menu ⋮ → Salvar e compartilhar → Instalar página como app). No iPhone: Compartilhar → Adicionar à Tela de Início.</p>':''}
   <form data-form="token"><label class="fl"><small>Repositório de dados</small><input class="f2" type="text" name="repo" value="${esc(CFG.repo||'joshpunk-JL/assistente-dados')}"></label><label class="fl"><small>${CFG.token?'Trocar token (deixe vazio para manter)':'Token do GitHub'}</small><input class="f2" type="password" name="token" autocomplete="off" placeholder="github_pat_…"></label><p class="err" id="seterr"></p><div class="sg" style="justify-content:flex-end;margin-top:12px">${CFG.token?bt('logout',null,'Sair deste aparelho','dg','logout','style="margin-right:auto"'):''}${bt('setclose',null,'Fechar')}<button class="bt sa" type="submit">Salvar</button></div></form></div></div>`}
 
@@ -261,8 +262,8 @@ function vAgenda(){
   h+=`<div class="cd2"><p style="font-size:14px;font-weight:500;margin:0 0 8px">${WF[sd.getDay()]}, ${sd.getDate()} de ${MFl[sd.getMonth()]}</p>`;
   if(!it.length)h+='<p class="sm" style="margin:0 0 8px">Nada marcado neste dia.</p>';
   it.forEach(x=>{h+=`<div class="rw2" style="cursor:default">${x.v?ic('wallet',16,x.paid?'var(--text-muted)':RED):ic('clock',16,BLU)}<div style="flex:1;min-width:0;font-size:13px;${x.paid?'color:var(--text-secondary);text-decoration:line-through':''}">${nmx(x)}<div class="sm" style="font-size:11px">${x.v?(x.paid?(x.st===2?'Pago de outra conta':'Pago desta conta'):'Pagar'):(x.t||'Dia todo')}</div></div>${vin(x)}${act(x)}</div>`});
-  if(S.ne){let op='';recOpts(S.sel).forEach(o=>{op+=`<option value="${o[0]}"${S.nr===o[0]?' selected':''}>${o[1]}</option>`});
-    h+=`<div style="margin-top:10px;border-top:.5px solid var(--border);padding-top:10px"><p style="font-size:13px;font-weight:500;margin:0 0 6px">Novo compromisso</p><div style="display:flex;gap:6px;margin-bottom:6px"><div style="display:flex;gap:4px;flex:0 0 auto"><select class="f2" id="nvh" aria-label="Hora" style="width:96px"><option value="">Dia todo</option>${Array.from({length:24},(_,i)=>`<option value="${i}"${S.nh!==''&&+S.nh===i?' selected':''}>${pad(i)}h</option>`).join('')}</select><select class="f2" id="nvm" aria-label="Minutos" style="width:70px"${S.nh===''?' disabled':''}>${['00','15','30','45'].map(m=>`<option value="${m}"${S.nm===m?' selected':''}>${m}</option>`).join('')}</select></div></div><textarea class="f2" id="nvn" rows="3" placeholder="Compromisso" style="margin-bottom:6px;resize:vertical">${esc(S.nn)}</textarea><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">${ic('repeat',16,'var(--text-secondary)')}<select class="f2" id="nvr">${op}</select></div>`;
+  if(S.ne){let op='';const eev=S.ee&&D.eventos.find(x=>x.id===S.ee);recOpts(eev?eev.s:S.sel).forEach(o=>{op+=`<option value="${o[0]}"${S.nr===o[0]?' selected':''}>${o[1]}</option>`});
+    h+=`<div style="margin-top:10px;border-top:.5px solid var(--border);padding-top:10px"><p style="font-size:13px;font-weight:500;margin:0 0 6px">${S.ee?'Editar compromisso':'Novo compromisso'}</p>${S.ee?`<label class="sm" style="display:block;margin:0 0 6px;font-size:12px">${S.nr!=='none'?'Início da série':'Data'}<input class="f2" id="nvd" type="date" value="${S.ed||(eev?eev.s:'')}" style="margin-top:3px"></label>`:''}<div style="display:flex;gap:6px;margin-bottom:6px"><div style="display:flex;gap:4px;flex:0 0 auto"><select class="f2" id="nvh" aria-label="Hora" style="width:96px"><option value="">Dia todo</option>${Array.from({length:24},(_,i)=>`<option value="${i}"${S.nh!==''&&+S.nh===i?' selected':''}>${pad(i)}h</option>`).join('')}</select><select class="f2" id="nvm" aria-label="Minutos" style="width:70px"${S.nh===''?' disabled':''}>${['00','15','30','45'].map(m=>`<option value="${m}"${S.nm===m?' selected':''}>${m}</option>`).join('')}</select></div></div><textarea class="f2" id="nvn" rows="3" placeholder="Compromisso" style="margin-bottom:6px;resize:vertical">${esc(S.nn)}</textarea><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">${ic('repeat',16,'var(--text-secondary)')}<select class="f2" id="nvr">${op}</select></div>`;
     if(S.nr!=='none')h+=`<input class="f2" id="nve" type="text" placeholder="Repetir até dd/mm/aaaa (opcional)" value="${esc(S.nu)}" style="margin-bottom:6px!important">`;
     h+=`<p style="font-size:12px;color:var(--text-danger);margin:0 0 6px">${S.nerr}</p><div class="sg">${bt('ecancel',null,'Cancelar')}${bt('esave',null,'Salvar','sa')}</div></div>`}
   else h+=`<div style="margin-top:10px">${bt('enew',null,'Novo compromisso','','plus')}</div>`;
@@ -394,17 +395,19 @@ function draw(){
   instUi();setSt()}
 function softRender(){const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$('#main').contains(a)){return}if(S.set||S.rd)return;draw()}
 function go(t){dropEmpty();S.t=t;ls('as_tab',t);S.no=null;S.nd=0;S.te=null;S.ok='';S.gm=0;resetForm();S.rd='';S.dd=null;S.set=0;S.md=null;if(t==='hoje')S.hd=0;if(t==='comp')S.fm='e';if(t==='fin')FIT=false;SX=0;draw();scrollTo(0,0)}
-function resetForm(){S.ne=0;S.nerr='';S.nh='';S.nm='00';S.nn='';S.nr='none';S.nu=''}
+function resetForm(){S.ne=0;S.nerr='';S.ee='';S.ed='';S.nh='';S.nm='00';S.nn='';S.nr='none';S.nu=''}
 function dropEmpty(){if(!S.no)return;const n=D.notas.find(x=>x.id===S.no);if(n&&!n.t&&!n.c){if(n.u){n.x=1;touch(n)}else D.notas.splice(D.notas.indexOf(n),1)}}
 function addTask(){const el=$('#nt'),v=el?el.value.trim():'';if(!v){S.err='Digite o nome da tarefa';return}S.err='';const t={id:uid(),n:v,l:S.tl==='Todas'?'Geral':S.tl,d:0,s:0};D.tarefas.push(t);touch(t)}
 function saveEv(){
   const nv=S.nn.trim();
   if(!nv){S.nerr='Digite o nome do compromisso';return false}
-  let end='';const k=S.sel;
+  const eo=S.ee&&D.eventos.find(x=>x.id===S.ee);let end='';const k=eo?(S.ed||eo.s):S.sel;
   if(S.nr!=='none'&&S.nu.replace(/\s/g,'')){const u=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(S.nu.replace(/\s/g,''));
     if(!u||+u[2]>12||+u[2]<1||+u[1]<1||+u[1]>31){S.nerr='Data final no formato dd/mm/aaaa';return false}
     end=u[3]+'-'+pad(+u[2])+'-'+pad(+u[1]);if(end<k){S.nerr='A data final precisa ser depois do início';return false}}
-  const ev={id:uid(),s:k,h:S.nh===''?'':pad(+S.nh)+':'+S.nm,t:nv,r:S.nr,e:end,ex:[]};D.eventos.push(ev);touch(ev);resetForm();return true}
+  const hh=S.nh===''?'':pad(+S.nh)+':'+S.nm;
+  if(eo){Object.assign(eo,{s:k,h:hh,t:nv,r:S.nr,e:end});if(S.nr==='none')eo.ex=[];touch(eo);S.sel=k;S.ref=k;resetForm();return true}
+  const ev={id:uid(),s:k,h:hh,t:nv,r:S.nr,e:end,ex:[]};D.eventos.push(ev);touch(ev);resetForm();return true}
 function delEv(key,mode){
   const[date,id]=key.split('|'),e=D.eventos.find(x=>x.id===id);if(!e)return;
   if(mode==='one'&&e.r!=='none')e.ex=[...(e.ex||[]),date];
@@ -443,6 +446,7 @@ const A={
   atoday:()=>{S.sel=today();S.ref=today()},avw:(el,v)=>{S.av=v;S.ref=S.sel},
   aprev:()=>{S.ref=S.av==='sem'?addD(S.ref,-7):addM(mk(S.ref),-1)+'-01'},
   anext:()=>{S.ref=S.av==='sem'?addD(S.ref,7):addM(mk(S.ref),1)+'-01'},
+  eedit:(el,v)=>{const[d,id]=v.split('|'),e=find(D.eventos,id);if(!e)return;resetForm();S.t='agenda';ls('as_tab','agenda');S.sel=d;S.ref=d;S.ne=1;S.ee=id;S.ed=e.s;S.nh=e.h?String(+e.h.slice(0,2)):'';S.nm=e.h?e.h.slice(3):'00';S.nn=e.t;S.nr=e.r||'none';S.nu=e.e?dbr(e.e):'';S.dc='';scrollTo(0,0)},
   enew:()=>{resetForm();S.ne=1},ecancel:()=>{resetForm()},esave:()=>{saveEv()},
   tl:(el,v)=>{S.tl=v;S.te=null},
   tdone:(el,v)=>{const t=find(D.tarefas,v);t.d=t.d?0:1;S.te=null;touch(t)},
@@ -533,6 +537,7 @@ document.addEventListener('input',e=>{
   if(id==='gv'){S.g.v=el.value;S.gerr='';const ge=$('#ge');if(ge)ge.textContent='';$('#gp').innerHTML=gpHtml()}});
 document.addEventListener('change',e=>{
   const id=e.target.id;
+  if(id==='nvd'){S.ed=e.target.value;return}
   if(id==='nvr'){S.nr=e.target.value;draw();return}
   if(id==='nvh'){S.nh=e.target.value;S.nerr='';if(S.nh==='')S.nm='00';draw();return}
   if(id==='nvm'){S.nm=e.target.value;return}
